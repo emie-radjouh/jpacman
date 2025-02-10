@@ -46,6 +46,11 @@ public class LevelFactory {
     private final GhostFactory ghostFact;
 
     /**
+     * Shared Random instance.
+     */
+    private Random random;
+
+    /**
      * The way to calculate points upon collisions.
      */
     private final PointCalculator pointCalculator;
@@ -67,6 +72,7 @@ public class LevelFactory {
         this.ghostIndex = -1;
         this.ghostFact = ghostFactory;
         this.pointCalculator = pointCalculator;
+        this.random = new Random();
     }
 
     /**
@@ -106,7 +112,7 @@ public class LevelFactory {
             case CLYDE:
                 return ghostFact.createClyde();
             default:
-                return new RandomGhost(sprites.getGhostSprite(GhostColor.RED));
+                return new RandomGhost(sprites.getGhostSprite(GhostColor.RED), random);
         }
     }
 
@@ -137,8 +143,11 @@ public class LevelFactory {
          * @param ghostSprite
          *            The sprite for the ghost.
          */
-        RandomGhost(Map<Direction, Sprite> ghostSprite) {
+        private final Random random;
+
+        RandomGhost(Map<Direction, Sprite> ghostSprite, Random random) {
             super(ghostSprite, (int) DELAY, 0);
+            this.random = random;
         }
 
         @Override
@@ -164,7 +173,7 @@ public class LevelFactory {
             if (directions.isEmpty()) {
                 return null;
             }
-            int i = new Random().nextInt(directions.size());
+            int i = random.nextInt(directions.size());
             return directions.get(i);
         }
     }
