@@ -11,7 +11,7 @@ import nl.tudelft.jpacman.board.Unit;
  * A map of possible collisions and their handlers.
  *
  * @author Michael de Jong
- * @author Jeroen Roosen 
+ * @author Jeroen Roosen lol
  */
 public class CollisionInteractionMap implements CollisionMap {
 
@@ -164,27 +164,34 @@ public class CollisionInteractionMap implements CollisionMap {
      * @return A list of all classes and interfaces the class inherits.
      */
     @SuppressWarnings("unchecked")
-    private List<Class<? extends Unit>> getInheritance(
-        Class<? extends Unit> clazz) {
-        List<Class<? extends Unit>> found = new ArrayList<>();
-        found.add(clazz);
+    private List<Class<? extends Unit>> getInheritance(Class<? extends Unit> clazz) {
+        List<Class<? extends Unit>> inheritanceChain = new ArrayList<>();
+        inheritanceChain.add(clazz);
 
         int index = 0;
-        while (found.size() > index) {
-            Class<?> current = found.get(index);
-            Class<?> superClass = current.getSuperclass();
-            if (superClass != null && Unit.class.isAssignableFrom(superClass)) {
-                found.add((Class<? extends Unit>) superClass);
-            }
-            for (Class<?> classInterface : current.getInterfaces()) {
-                if (Unit.class.isAssignableFrom(classInterface)) {
-                    found.add((Class<? extends Unit>) classInterface);
-                }
-            }
+        while (inheritanceChain.size() > index) {
+            Class<?> currentClass = inheritanceChain.get(index);
+            addSuperclassIfApplicable(inheritanceChain, currentClass);
+            addInterfacesIfApplicable(inheritanceChain, currentClass);
             index++;
         }
 
-        return found;
+        return inheritanceChain;
+    }
+
+    private void addSuperclassIfApplicable(List<Class<? extends Unit>> inheritanceChain, Class<?> currentClass) {
+        Class<?> superClass = currentClass.getSuperclass();
+        if (superClass != null && Unit.class.isAssignableFrom(superClass)) {
+            inheritanceChain.add((Class<? extends Unit>) superClass);
+        }
+    }
+
+    private void addInterfacesIfApplicable(List<Class<? extends Unit>> inheritanceChain, Class<?> currentClass) {
+        for (Class<?> classInterface : currentClass.getInterfaces()) {
+            if (Unit.class.isAssignableFrom(classInterface)) {
+                inheritanceChain.add((Class<? extends Unit>) classInterface);
+            }
+        }
     }
 
     /**
