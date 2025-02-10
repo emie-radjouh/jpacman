@@ -88,14 +88,12 @@ public class CollisionInteractionMap implements CollisionMap {
      *            The handler that handles the collision.
      */
     private void addHandler(Class<? extends Unit> collider,
-                            Class<? extends Unit> collidee, CollisionHandler<?, ?> handler) {
-        if (!handlers.containsKey(collider)) {
-            handlers.put(collider, new HashMap<>());
-        }
-
-        Map<Class<? extends Unit>, CollisionHandler<?, ?>> map = handlers.get(collider);
-        map.put(collidee, handler);
+                            Class<? extends Unit> collidee,
+                            CollisionHandler<?, ?> handler) {
+        handlers.computeIfAbsent(collider, k -> new HashMap<>())
+            .put(collidee, handler);
     }
+
 
     /**
      * Handles the collision between two colliding parties, if a suitable
@@ -113,27 +111,26 @@ public class CollisionInteractionMap implements CollisionMap {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <C1 extends Unit, C2 extends Unit> void collide(C1 collider,
-                                                           C2 collidee) {
-        Class<? extends Unit> colliderKey = getMostSpecificClass(handlers, collider.getClass());
-        if (colliderKey == null) {
-            return;
+    public <C1 extends Unit, C2 extends Unit> void collide(C1 collider, C2 collidee) {
+        CollisionHandler<C1, C2> collisionHandler = getCollisionHandler(collider, collidee);
+        if (collisionHandler != null) {
+            collisionHandler.handleCollision(collider, collidee);
         }
-
-        Map<Class<? extends Unit>, CollisionHandler<?, ?>> map = handlers.get(colliderKey);
-        Class<? extends Unit> collideeKey = getMostSpecificClass(map, collidee.getClass());
-        if (collideeKey == null) {
-            return;
-        }
-
-        CollisionHandler<C1, C2> collisionHandler = (CollisionHandler<C1, C2>) map.get(collideeKey);
-        if (collisionHandler == null) {
-            return;
-        }
-
-        collisionHandler.handleCollision(collider, collidee);
     }
 
+    @SuppressWarnings("unchecked")
+    private <C1 extends Unit, C2 extends Unit> CollisionHandler<C1, C2> getCollisionHandler(C1 collider, C2 collidee) {
+        Class<? extends Unit> colliderKey = getMostSpecificClass(handlers, collider.getClass());
+        if (colliderKey == null) return null;
+
+        Map<Class<? extends Unit>, CollisionHandler<?, ?>> map = handlers.get(colliderKey);
+        if (map == null) return null;
+
+        Class<? extends Unit> collideeKey = getMostSpecificClass(map, collidee.getClass());
+        if (collideeKey == null) return null;
+
+        return (CollisionHandler<C1, C2>) map.get(collideeKey);
+    }
     /**
      * Figures out the most specific class that is listed in the map. I.e. if A
      * extends B and B is listed while requesting A, then B will be returned.
@@ -144,15 +141,11 @@ public class CollisionInteractionMap implements CollisionMap {
      *            The class to search the most suitable key for.
      * @return The most specific class from the key collection.
      */
-    private Class<? extends Unit> getMostSpecificClass(
-        Map<Class<? extends Unit>, ?> map, Class<? extends Unit> key) {
-        List<Class<? extends Unit>> collideeInheritance = getInheritance(key);
-        for (Class<? extends Unit> pointer : collideeInheritance) {
-            if (map.containsKey(pointer)) {
-                return pointer;
-            }
-        }
-        return null;
+    private Class<? extends Unit> getMostSpecificClass(Map<Class<? extends Unit>, ?> map, Class<? extends Unit> key) {
+        return getInheritance(key).stream()
+            .filter(map::containsKey)
+            .findFirst()
+            .orElse(null);
     }
 
     /**
