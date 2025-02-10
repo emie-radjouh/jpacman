@@ -92,9 +92,9 @@ public class Level {
      */
     public Level(Board board, List<Ghost> ghosts, List<Square> startPositions,
                  CollisionMap collisionMap) {
-        assert board != null;
-        assert ghosts != null;
-        assert startPositions != null;
+        if (board == null || ghosts == null || startPositions == null) {
+            throw new IllegalArgumentException("Arguments cannot be null");
+        }
 
         this.board = board;
         this.inProgress = false;
@@ -138,9 +138,12 @@ public class Level {
      *            The player to register.
      */
     public void registerPlayer(Player player) {
-        assert player != null;
-        assert !startSquares.isEmpty();
-
+        if (player == null) {
+            throw new IllegalArgumentException("Player cannot be null");
+        }
+        if (startSquares.isEmpty()) {
+            throw new IllegalStateException("No start positions available");
+        }
         if (players.contains(player)) {
             return;
         }
@@ -170,10 +173,12 @@ public class Level {
      *            The direction to move the unit in.
      */
     public void move(Unit unit, Direction direction) {
-        assert unit != null;
-        assert direction != null;
-        assert unit.hasSquare();
-
+        if (unit == null || direction == null) {
+            throw new IllegalArgumentException("Unit and direction cannot be null");
+        }
+        if (!unit.hasSquare()) {
+            throw new IllegalStateException("Unit must be on a square");
+        }
         if (!isInProgress()) {
             return;
         }
@@ -264,14 +269,28 @@ public class Level {
      */
     private void updateObservers() {
         if (!isAnyPlayerAlive()) {
-            for (LevelObserver observer : observers) {
-                observer.levelLost();
-            }
+            notifyLevelLost();
         }
         if (remainingPellets() == 0) {
-            for (LevelObserver observer : observers) {
-                observer.levelWon();
-            }
+            notifyLevelWon();
+        }
+    }
+
+    /**
+     * Notifies observers that the level is lost.
+     */
+    private void notifyLevelLost() {
+        for (LevelObserver observer : observers) {
+            observer.levelLost();
+        }
+    }
+
+    /**
+     * Notifies observers that the level is won.
+     */
+    private void notifyLevelWon() {
+        for (LevelObserver observer : observers) {
+            observer.levelWon();
         }
     }
 
@@ -301,14 +320,26 @@ public class Level {
         int pellets = 0;
         for (int x = 0; x < board.getWidth(); x++) {
             for (int y = 0; y < board.getHeight(); y++) {
-                for (Unit unit : board.squareAt(x, y).getOccupants()) {
-                    if (unit instanceof Pellet) {
-                        pellets++;
-                    }
-                }
+                pellets += countPelletsInSquare(board.squareAt(x, y));
             }
         }
         assert pellets >= 0;
+        return pellets;
+    }
+
+    /**
+     * Counts the pellets in a given square.
+     *
+     * @param square The square to count pellets in.
+     * @return The number of pellets in the square.
+     */
+    private int countPelletsInSquare(Square square) {
+        int pellets = 0;
+        for (Unit unit : square.getOccupants()) {
+            if (unit instanceof Pellet) {
+                pellets++;
+            }
+        }
         return pellets;
     }
 
