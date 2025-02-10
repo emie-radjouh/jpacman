@@ -39,6 +39,8 @@ public class Player extends Unit {
      */
     private Unit killer;
 
+    private int life;
+
     /**
      * Creates a new player with a score of 0 points.
      *
@@ -52,6 +54,7 @@ public class Player extends Unit {
         this.alive = true;
         this.sprites = spriteMap;
         this.deathSprite = deathAnimation;
+        this.life=3;
         deathSprite.setAnimating(false);
     }
 
@@ -62,6 +65,13 @@ public class Player extends Unit {
      */
     public boolean isAlive() {
         return alive;
+    }
+    public int getlife() {
+        return life;
+    }
+
+    public void reducelife() {
+        life--;
     }
 
     /**
