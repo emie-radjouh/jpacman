@@ -92,8 +92,14 @@ public class Level {
      */
     public Level(Board board, List<Ghost> ghosts, List<Square> startPositions,
                  CollisionMap collisionMap) {
-        if (board == null || ghosts == null || startPositions == null) {
-            throw new IllegalArgumentException("Arguments cannot be null");
+        if (board == null) {
+            throw new IllegalArgumentException("Board cannot be null");
+        }
+        if (ghosts == null) {
+            throw new IllegalArgumentException("Ghosts cannot be null");
+        }
+        if (startPositions == null) {
+            throw new IllegalArgumentException("Start positions cannot be null");
         }
 
         this.board = board;
@@ -184,18 +190,26 @@ public class Level {
         }
 
         synchronized (moveLock) {
-            unit.setDirection(direction);
-            Square location = unit.getSquare();
-            Square destination = location.getSquareAt(direction);
+            executeMove(unit, direction);
+        }
+    }
 
-            if (destination.isAccessibleTo(unit)) {
-                List<Unit> occupants = destination.getOccupants();
-                unit.occupy(destination);
-                for (Unit occupant : occupants) {
-                    collisions.collide(unit, occupant);
-                }
-            }
-            updateObservers();
+    private void executeMove(Unit unit, Direction direction) {
+        unit.setDirection(direction);
+        Square location = unit.getSquare();
+        Square destination = location.getSquareAt(direction);
+
+        if (destination.isAccessibleTo(unit)) {
+            handleCollisions(unit, destination);
+        }
+        updateObservers();
+    }
+
+    private void handleCollisions(Unit unit, Square destination) {
+        List<Unit> occupants = destination.getOccupants();
+        unit.occupy(destination);
+        for (Unit occupant : occupants) {
+            collisions.collide(unit, occupant);
         }
     }
 
